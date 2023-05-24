@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:stock_app/pages/homepage.dart';
-import 'package:stock_app/pages/registrationpage.dart';
+import 'package:stock_app/models/user_model.dart';
+import 'package:stock_app/pages/loginpage.dart';
 import 'package:stock_app/widgets/encryption.dart';
 
-class Loginpage extends StatefulWidget {
-  const Loginpage({Key? key}) : super(key: key);
+class RegistrationPage extends StatefulWidget {
+  const RegistrationPage({Key? key}) : super(key: key);
 
   @override
-  State<Loginpage> createState() => _LoginpageState();
+  State<RegistrationPage> createState() => RegistrationPageState();
 }
 
-class _LoginpageState extends State<Loginpage> {
+class RegistrationPageState extends State<RegistrationPage> {
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
@@ -31,7 +31,7 @@ class _LoginpageState extends State<Loginpage> {
                   children: [
                     const Center(
                       child: Text(
-                        "Login",
+                        "Registration",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 28,
@@ -86,47 +86,29 @@ class _LoginpageState extends State<Loginpage> {
       child: ElevatedButton(
         onPressed: () async {
           if (Hive.isBoxOpen('users')) {
-            bool isUserExist = await checkUser(
-                usernameController.text, passwordController.text);
-
-            if (isUserExist == true && context.mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const Homepage(),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Either your Email or Password is incorrect!'),
-                ),
-              );
-            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const Loginpage(),
+              ),
+            );
+            await addUser(usernameController.text, passwordController.text);
           } else {
             await Hive.openBox('users');
 
-            bool isUserExist = await checkUser(
-                usernameController.text, passwordController.text);
-
-            if (isUserExist == true && context.mounted) {
+            if (context.mounted) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const Homepage(),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Either your Email or Password is incorrect!'),
+                  builder: (context) => const Loginpage(),
                 ),
               );
             }
+            await addUser(usernameController.text, passwordController.text);
           }
         },
         child: const Text(
-          'Login',
+          'Register',
           style: TextStyle(
             fontSize: 18,
           ),
@@ -142,7 +124,7 @@ class _LoginpageState extends State<Loginpage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'Belum punya akun?',
+            'Sudah punya akun?',
             style: TextStyle(
               color: Colors.black,
               fontSize: 15,
@@ -154,12 +136,12 @@ class _LoginpageState extends State<Loginpage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const RegistrationPage(),
+                  builder: (context) => const Loginpage(),
                 ),
               );
             },
             child: const Text(
-              'Daftar',
+              'Masuk',
               style: TextStyle(
                 color: Colors.blue,
                 fontSize: 15,
@@ -172,23 +154,10 @@ class _LoginpageState extends State<Loginpage> {
     );
   }
 
-  Future<bool> checkUser(String mail, String pass) async {
-    var user = Hive.box('users');
-    final email = mail;
-    final password = pass;
-
-    final allUsers = user.values.toList();
-
+  Future<void> addUser(String email, String password) async {
+    var user = Hive.box("users");
     String encryptedPassword = CustomEncryption.enrcyptAES(password).toString();
 
-    final matchingUser = allUsers.any(
-      (user) => user.email == email && user.password == encryptedPassword,
-    );
-
-    if (matchingUser == true) {
-      return true;
-    } else {
-      return false;
-    }
+    user.add(User(email, encryptedPassword));
   }
 }
